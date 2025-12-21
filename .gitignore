@@ -1,0 +1,19 @@
+# Sensitive configuration files
+config.php
+
+# User uploads
+uploads/*
+!uploads/.htaccess
+!uploads/index.php
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
