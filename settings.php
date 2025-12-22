@@ -73,41 +73,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 $stmt->execute([$key, $value, $value]);
             }
             
-            // Update config.php file
+            // Update config.php file with safe constant definitions
             $config_content = "<?php\n";
             $config_content .= "// Database configuration\n";
-            $config_content .= "define('DB_HOST', '" . DB_HOST . "');\n";
-            $config_content .= "define('DB_NAME', '" . DB_NAME . "');\n";
-            $config_content .= "define('DB_USER', '" . DB_USER . "');\n";
-            $config_content .= "define('DB_PASS', '" . DB_PASS . "');\n\n";
+            $config_content .= "if (!defined('DB_HOST')) define('DB_HOST', '" . DB_HOST . "');\n";
+            $config_content .= "if (!defined('DB_NAME')) define('DB_NAME', '" . DB_NAME . "');\n";
+            $config_content .= "if (!defined('DB_USER')) define('DB_USER', '" . DB_USER . "');\n";
+            $config_content .= "if (!defined('DB_PASS')) define('DB_PASS', '" . DB_PASS . "');\n\n";
             
             $config_content .= "// Company Information\n";
-            $config_content .= "define('COMPANY_NAME', '" . addslashes($settings['company_name']) . "');\n";
-            $config_content .= "define('COMPANY_ADDRESS', '" . addslashes($settings['company_address']) . "');\n";
-            $config_content .= "define('COMPANY_EMAIL', '" . addslashes($settings['company_email']) . "');\n";
-            $config_content .= "define('COMPANY_PHONE', '" . addslashes($settings['company_phone']) . "');\n";
+            $config_content .= "if (!defined('COMPANY_NAME')) define('COMPANY_NAME', '" . addslashes($settings['company_name']) . "');\n";
+            $config_content .= "if (!defined('COMPANY_ADDRESS')) define('COMPANY_ADDRESS', '" . addslashes($settings['company_address']) . "');\n";
+            $config_content .= "if (!defined('COMPANY_EMAIL')) define('COMPANY_EMAIL', '" . addslashes($settings['company_email']) . "');\n";
+            $config_content .= "if (!defined('COMPANY_PHONE')) define('COMPANY_PHONE', '" . addslashes($settings['company_phone']) . "');\n";
             if (!empty($settings['company_logo'])) {
-                $config_content .= "define('COMPANY_LOGO', '" . addslashes($settings['company_logo']) . "');\n";
+                $config_content .= "if (!defined('COMPANY_LOGO')) define('COMPANY_LOGO', '" . addslashes($settings['company_logo']) . "');\n";
             }
             $config_content .= "\n";
             
             $config_content .= "// Application Settings\n";
-            $config_content .= "define('APP_NAME', 'GeekMobile Invoice System');\n";
-            $config_content .= "define('DEFAULT_TAX_RATE', " . $settings['default_tax_rate'] . ");\n";
-            $config_content .= "define('DEFAULT_CURRENCY', '" . $settings['default_currency'] . "');\n";
-            $config_content .= "define('CURRENCY_SYMBOL', '$');\n\n";
+            $config_content .= "if (!defined('APP_NAME')) define('APP_NAME', 'GeekMobile Invoice System');\n";
+            $config_content .= "if (!defined('DEFAULT_TAX_RATE')) define('DEFAULT_TAX_RATE', " . $settings['default_tax_rate'] . ");\n";
+            $config_content .= "if (!defined('DEFAULT_CURRENCY')) define('DEFAULT_CURRENCY', '" . $settings['default_currency'] . "');\n";
+            $config_content .= "if (!defined('CURRENCY_SYMBOL')) define('CURRENCY_SYMBOL', '$');\n\n";
             
             $config_content .= "// Email Settings (SMTP)\n";
-            $config_content .= "define('SMTP_HOST', '" . addslashes($settings['smtp_host']) . "');\n";
-            $config_content .= "define('SMTP_USER', '" . addslashes($settings['smtp_username']) . "');\n";
-            $config_content .= "define('SMTP_PASS', '" . addslashes($settings['smtp_password']) . "');\n";
-            $config_content .= "define('SMTP_AUTH', true);\n";
-            $config_content .= "define('SMTP_SECURE', '" . $settings['smtp_secure'] . "');\n";
-            $config_content .= "define('SMTP_PORT', " . $settings['smtp_port'] . ");\n";
-            $config_content .= "define('SMTP_USERNAME', '" . addslashes($settings['smtp_username']) . "');\n";
-            $config_content .= "define('SMTP_PASSWORD', '" . addslashes($settings['smtp_password']) . "');\n";
-            $config_content .= "define('FROM_EMAIL', '" . addslashes($settings['from_email']) . "');\n";
-            $config_content .= "define('FROM_NAME', '" . addslashes($settings['from_name']) . "');\n";
+            $config_content .= "if (!defined('SMTP_HOST')) define('SMTP_HOST', '" . addslashes($settings['smtp_host']) . "');\n";
+            $config_content .= "if (!defined('SMTP_USER')) define('SMTP_USER', '" . addslashes($settings['smtp_username']) . "');\n";
+            $config_content .= "if (!defined('SMTP_PASS')) define('SMTP_PASS', '" . addslashes($settings['smtp_password']) . "');\n";
+            $config_content .= "if (!defined('SMTP_AUTH')) define('SMTP_AUTH', true);\n";
+            $config_content .= "if (!defined('SMTP_SECURE')) define('SMTP_SECURE', '" . $settings['smtp_secure'] . "');\n";
+            $config_content .= "if (!defined('SMTP_PORT')) define('SMTP_PORT', " . $settings['smtp_port'] . ");\n";
+            $config_content .= "if (!defined('SMTP_USERNAME')) define('SMTP_USERNAME', '" . addslashes($settings['smtp_username']) . "');\n";
+            $config_content .= "if (!defined('SMTP_PASSWORD')) define('SMTP_PASSWORD', '" . addslashes($settings['smtp_password']) . "');\n";
+            $config_content .= "if (!defined('FROM_EMAIL')) define('FROM_EMAIL', '" . addslashes($settings['from_email']) . "');\n";
+            $config_content .= "if (!defined('FROM_NAME')) define('FROM_NAME', '" . addslashes($settings['from_name']) . "');\n";
             $config_content .= "?>";
             
             file_put_contents('config.php', $config_content);

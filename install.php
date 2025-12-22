@@ -268,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $config_content .= "define('APP_NAME', 'GeekMobile Invoice System');\n";
             $config_content .= "define('DEFAULT_TAX_RATE', " . ($_SESSION['default_tax_rate'] / 100) . ");\n";
             $config_content .= "define('DEFAULT_CURRENCY', 'USD');\n";
-            $config_content .= "define('CURRENCY_SYMBOL', '$');\n\n";
+            $config_content .= "if (!defined('CURRENCY_SYMBOL')) define('CURRENCY_SYMBOL', '$');\n\n";
             
             $config_content .= "// Email Settings (SMTP)\n";
             $config_content .= "define('SMTP_HOST', 'smtp.gmail.com');\n";
