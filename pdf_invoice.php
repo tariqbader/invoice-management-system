@@ -174,8 +174,8 @@ try {
         // Draw the main item row
         $pdf->MultiCell(80, 6, $description, 1, 'L', false, 0);
         $pdf->Cell(30, 6, number_format($item['quantity'], 2), 1, 0, 'C');
-        $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($item['unit_price'], 2), 1, 0, 'R');
-        $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($item['line_total'], 2), 1, 1, 'R');
+        $pdf->Cell(35, 6, get_currency_symbol() . number_format($item['unit_price'], 2), 1, 0, 'R');
+        $pdf->Cell(35, 6, get_currency_symbol() . number_format($item['line_total'], 2), 1, 1, 'R');
         
         // Display repair details if they exist
         if (!empty($item['repair_details'])) {
@@ -220,7 +220,7 @@ try {
     
     $pdf->SetFont('helvetica', '', 10);
     $pdf->Cell(145, 6, 'Subtotal:', 0, 0, 'R');
-    $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($invoice['subtotal'], 2), 0, 1, 'R');
+    $pdf->Cell(35, 6, get_currency_symbol() . number_format($invoice['subtotal'], 2), 0, 1, 'R');
     
     if ($invoice['discount_amount'] > 0) {
         $discount_label = 'Discount';
@@ -228,15 +228,15 @@ try {
             $discount_label .= ' (' . $invoice['discount_value'] . '%)';
         }
         $pdf->Cell(145, 6, $discount_label . ':', 0, 0, 'R');
-        $pdf->Cell(35, 6, '-' . CURRENCY_SYMBOL . number_format($invoice['discount_amount'], 2), 0, 1, 'R');
+        $pdf->Cell(35, 6, '-' . get_currency_symbol() . number_format($invoice['discount_amount'], 2), 0, 1, 'R');
     }
     
     $pdf->Cell(145, 6, 'Tax (' . $invoice['tax_rate'] . '%):', 0, 0, 'R');
-    $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($invoice['tax_amount'], 2), 0, 1, 'R');
+    $pdf->Cell(35, 6, get_currency_symbol() . number_format($invoice['tax_amount'], 2), 0, 1, 'R');
     
     $pdf->SetFont('helvetica', 'B', 12);
     $pdf->Cell(145, 8, 'Total:', 0, 0, 'R');
-    $pdf->Cell(35, 8, CURRENCY_SYMBOL . number_format($invoice['total'], 2), 0, 1, 'R');
+    $pdf->Cell(35, 8, get_currency_symbol() . number_format($invoice['total'], 2), 0, 1, 'R');
     
     // Payment information
     if (!empty($payments)) {
@@ -248,7 +248,7 @@ try {
         foreach ($payments as $payment) {
             $payment_info = date('M d, Y', strtotime($payment['payment_date'])) . ' - ' . 
                           ucfirst(str_replace('_', ' ', $payment['payment_method'])) . ': ' . 
-                          CURRENCY_SYMBOL . number_format($payment['amount'], 2);
+                          get_currency_symbol() . number_format($payment['amount'], 2);
             if ($payment['transaction_id']) {
                 $payment_info .= ' (Ref: ' . $payment['transaction_id'] . ')';
             }
@@ -258,11 +258,11 @@ try {
         $pdf->Ln(3);
         $pdf->SetFont('helvetica', 'B', 10);
         $pdf->Cell(145, 6, 'Amount Paid:', 0, 0, 'R');
-        $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($paid_amount, 2), 0, 1, 'R');
+        $pdf->Cell(35, 6, get_currency_symbol() . number_format($paid_amount, 2), 0, 1, 'R');
         
         $pdf->SetFont('helvetica', 'B', 11);
         $pdf->Cell(145, 7, 'Balance Due:', 0, 0, 'R');
-        $pdf->Cell(35, 7, CURRENCY_SYMBOL . number_format($balance_due, 2), 0, 1, 'R');
+        $pdf->Cell(35, 7, get_currency_symbol() . number_format($balance_due, 2), 0, 1, 'R');
     }
     
     // Notes section
