@@ -13,6 +13,22 @@ require_once 'lib/phpmailer/src/SMTP.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// Helper function to get the correct currency symbol
+if (!function_exists('get_currency_symbol')) {
+    function get_currency_symbol() {
+        if (defined('CURRENCY_SYMBOL_OVERRIDE')) {
+            return CURRENCY_SYMBOL_OVERRIDE;
+        }
+        if (defined('INVOICE_CURRENCY')) {
+            return INVOICE_CURRENCY;
+        }
+        if (defined('CURRENCY_SYMBOL') && CURRENCY_SYMBOL === '$') {
+            return CURRENCY_SYMBOL;
+        }
+        return '$'; // Fallback
+    }
+}
+
 // Initialize database connection
 $pdo = getDBConnection();
 
@@ -268,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $invoice_id > 0) {
                 <h3>Invoice Details</h3>
                 <p><strong>Invoice #:</strong> <?php echo htmlspecialchars($invoice['invoice_number']); ?></p>
                 <p><strong>Client:</strong> <?php echo htmlspecialchars($invoice['client_name']); ?></p>
-                <p><strong>Amount:</strong> <?php echo CURRENCY_SYMBOL . number_format($invoice['total'], 2); ?></p>
+                <p><strong>Amount:</strong> <?php echo get_currency_symbol() . number_format($invoice['total'], 2); ?></p>
             </div>
             
             <div class="shareable-link">
@@ -374,14 +390,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $invoice_id > 0) {
         // Create PHPMailer instance
         $mail = new PHPMailer(true);
         
-        // Server settings
-        $mail->isSMTP();
-        $mail->Host       = SMTP_HOST;
-        $mail->SMTPAuth   = SMTP_AUTH;
-        $mail->Username   = SMTP_USERNAME;
-        $mail->Password   = SMTP_PASSWORD;
-        $mail->SMTPSecure = SMTP_SECURE;
-        $mail->Port       = SMTP_PORT;
+        // Try SMTP first, fall back to mail() if it fails
+        try {
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host       = SMTP_HOST;
+            $mail->SMTPAuth   = SMTP_AUTH;
+            $mail->Username   = SMTP_USERNAME;
+            $mail->Password   = SMTP_PASSWORD;
+            $mail->SMTPSecure = SMTP_SECURE;
+            $mail->Port       = SMTP_PORT;
+            $mail->Timeout    = 10; // 10 second timeout
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+        } catch (Exception $smtp_error) {
+            // If SMTP fails, fall back to PHP mail()
+            $mail->isMail();
+        }
         
         // Recipients
         $mail->setFrom(COMPANY_EMAIL, COMPANY_NAME);
@@ -448,7 +478,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $invoice_id > 0) {
                             </tr>
                             <tr>
                                 <th>Total Amount</th>
-                                <td class="amount">' . CURRENCY_SYMBOL . number_format($invoice['total'], 2) . '</td>
+                                <td class="amount">' . get_currency_symbol() . number_format($invoice['total'], 2) . '</td>
                             </tr>
                         </table>
                     </div>
@@ -496,7 +526,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $invoice_id > 0) {
                          "Invoice Number: {$invoice['invoice_number']}\n" .
                          "Invoice Date: " . date('F d, Y', strtotime($invoice['invoice_date'])) . "\n" .
                          "Due Date: " . date('F d, Y', strtotime($invoice['due_date'])) . "\n" .
-                         "Total Amount: " . CURRENCY_SYMBOL . number_format($invoice['total'], 2) . "\n\n" .
+                         "Total Amount: " . get_currency_symbol() . number_format($invoice['total'], 2) . "\n\n" .
                          "View your invoice online:\n" .
                          $shareable_url . "\n\n" .
                          "This link will expire on " . $expiry_date . "\n\n" .

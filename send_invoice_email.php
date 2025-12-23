@@ -203,14 +203,28 @@ try {
     // Create PHPMailer instance
     $mail = new PHPMailer(true);
     
-    // Server settings
-    $mail->isSMTP();
-    $mail->Host       = SMTP_HOST;
-    $mail->SMTPAuth   = SMTP_AUTH;
-    $mail->Username   = SMTP_USERNAME;
-    $mail->Password   = SMTP_PASSWORD;
-    $mail->SMTPSecure = SMTP_SECURE;
-    $mail->Port       = SMTP_PORT;
+    // Try SMTP first, fall back to mail() if it fails
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = SMTP_AUTH;
+        $mail->Username   = SMTP_USERNAME;
+        $mail->Password   = SMTP_PASSWORD;
+        $mail->SMTPSecure = SMTP_SECURE;
+        $mail->Port       = SMTP_PORT;
+        $mail->Timeout    = 10; // 10 second timeout
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
+    } catch (Exception $smtp_error) {
+        // If SMTP fails, fall back to PHP mail()
+        $mail->isMail();
+    }
     
     // Recipients
     $mail->setFrom(COMPANY_EMAIL, COMPANY_NAME);

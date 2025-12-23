@@ -7,6 +7,22 @@
 require_once 'config.php';
 require_once 'db.php';
 
+// Helper function to get the correct currency symbol
+if (!function_exists('get_currency_symbol')) {
+    function get_currency_symbol() {
+        if (defined('CURRENCY_SYMBOL_OVERRIDE')) {
+            return CURRENCY_SYMBOL_OVERRIDE;
+        }
+        if (defined('INVOICE_CURRENCY')) {
+            return INVOICE_CURRENCY;
+        }
+        if (defined('CURRENCY_SYMBOL') && CURRENCY_SYMBOL === '$') {
+            return CURRENCY_SYMBOL;
+        }
+        return '$'; // Fallback
+    }
+}
+
 // Initialize database connection
 $pdo = getDBConnection();
 
@@ -292,7 +308,7 @@ try {
             <div class="summary-cards">
                 <div class="summary-card">
                     <h3>Total Revenue</h3>
-                    <div class="value"><?php echo CURRENCY_SYMBOL . number_format($revenue_summary['total_revenue'] ?? 0, 2); ?></div>
+                    <div class="value"><?php echo get_currency_symbol() . number_format($revenue_summary['total_revenue'] ?? 0, 2); ?></div>
                 </div>
                 <div class="summary-card">
                     <h3>Total Invoices</h3>
@@ -300,7 +316,7 @@ try {
                 </div>
                 <div class="summary-card">
                     <h3>Average Invoice</h3>
-                    <div class="value"><?php echo CURRENCY_SYMBOL . number_format($revenue_summary['avg_invoice_value'] ?? 0, 2); ?></div>
+                    <div class="value"><?php echo get_currency_symbol() . number_format($revenue_summary['avg_invoice_value'] ?? 0, 2); ?></div>
                 </div>
             </div>
             
@@ -321,10 +337,10 @@ try {
                             <tr>
                                 <td><?php echo date('F Y', strtotime($row['month'] . '-01')); ?></td>
                                 <td><?php echo number_format($row['invoice_count']); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($row['total_subtotal'], 2); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($row['total_tax'], 2); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($row['total_discount'], 2); ?></td>
-                                <td><strong><?php echo CURRENCY_SYMBOL . number_format($row['total_revenue'], 2); ?></strong></td>
+                                <td><?php echo get_currency_symbol() . number_format($row['total_subtotal'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($row['total_tax'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($row['total_discount'], 2); ?></td>
+                                <td><strong><?php echo get_currency_symbol() . number_format($row['total_revenue'], 2); ?></strong></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -344,11 +360,11 @@ try {
             <div class="summary-cards">
                 <div class="summary-card">
                     <h3>Total Outstanding</h3>
-                    <div class="value"><?php echo CURRENCY_SYMBOL . number_format($total_outstanding ?? 0, 2); ?></div>
+                    <div class="value"><?php echo get_currency_symbol() . number_format($total_outstanding ?? 0, 2); ?></div>
                 </div>
                 <div class="summary-card">
                     <h3>Overdue Amount</h3>
-                    <div class="value" style="color: #dc3545;"><?php echo CURRENCY_SYMBOL . number_format($total_overdue ?? 0, 2); ?></div>
+                    <div class="value" style="color: #dc3545;"><?php echo get_currency_symbol() . number_format($total_overdue ?? 0, 2); ?></div>
                 </div>
                 <div class="summary-card">
                     <h3>Unpaid Invoices</h3>
@@ -378,9 +394,9 @@ try {
                                 <td><?php echo htmlspecialchars($inv['client_name']); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($inv['invoice_date'])); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($inv['due_date'])); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($inv['total'], 2); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($inv['paid_amount'], 2); ?></td>
-                                <td><strong><?php echo CURRENCY_SYMBOL . number_format($inv['balance_due'], 2); ?></strong></td>
+                                <td><?php echo get_currency_symbol() . number_format($inv['total'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($inv['paid_amount'], 2); ?></td>
+                                <td><strong><?php echo get_currency_symbol() . number_format($inv['balance_due'], 2); ?></strong></td>
                                 <td><?php echo $inv['days_overdue'] > 0 ? '<span style="color: red;">' . $inv['days_overdue'] . ' days</span>' : '-'; ?></td>
                                 <td><span class="status-badge status-<?php echo $inv['status']; ?>"><?php echo strtoupper($inv['status']); ?></span></td>
                             </tr>
@@ -420,9 +436,9 @@ try {
                                 <td><?php echo htmlspecialchars($client['email']); ?></td>
                                 <td><?php echo htmlspecialchars($client['phone']); ?></td>
                                 <td><?php echo number_format($client['total_invoices']); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($client['total_billed'], 2); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($client['total_paid'], 2); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($client['outstanding_balance'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($client['total_billed'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($client['total_paid'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($client['outstanding_balance'], 2); ?></td>
                                 <td><?php echo $client['last_invoice_date'] ? date('M d, Y', strtotime($client['last_invoice_date'])) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -443,7 +459,7 @@ try {
             <div class="summary-cards">
                 <div class="summary-card">
                     <h3>Total Payments Received</h3>
-                    <div class="value"><?php echo CURRENCY_SYMBOL . number_format($total_payments ?? 0, 2); ?></div>
+                    <div class="value"><?php echo get_currency_symbol() . number_format($total_payments ?? 0, 2); ?></div>
                 </div>
                 <div class="summary-card">
                     <h3>Number of Transactions</h3>
@@ -468,7 +484,7 @@ try {
                             <tr>
                                 <td><?php echo ucfirst(str_replace('_', ' ', $method['payment_method'])); ?></td>
                                 <td><?php echo number_format($method['transaction_count']); ?></td>
-                                <td><?php echo CURRENCY_SYMBOL . number_format($method['total_amount'], 2); ?></td>
+                                <td><?php echo get_currency_symbol() . number_format($method['total_amount'], 2); ?></td>
                                 <td><?php echo number_format(($method['total_amount'] / $total_payments) * 100, 1); ?>%</td>
                             </tr>
                         <?php endforeach; ?>
@@ -496,7 +512,7 @@ try {
                                 <td><?php echo date('M d, Y', strtotime($payment['payment_date'])); ?></td>
                                 <td><?php echo htmlspecialchars($payment['invoice_number']); ?></td>
                                 <td><?php echo htmlspecialchars($payment['client_name']); ?></td>
-                                <td><strong><?php echo CURRENCY_SYMBOL . number_format($payment['amount'], 2); ?></strong></td>
+                                <td><strong><?php echo get_currency_symbol() . number_format($payment['amount'], 2); ?></strong></td>
                                 <td><?php echo ucfirst(str_replace('_', ' ', $payment['payment_method'])); ?></td>
                                 <td><?php echo htmlspecialchars($payment['transaction_id'] ?? '-'); ?></td>
                             </tr>

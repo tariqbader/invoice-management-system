@@ -8,6 +8,22 @@
 require_once 'config.php';
 require_once 'db.php';
 
+// Helper function to get the correct currency symbol
+if (!function_exists('get_currency_symbol')) {
+    function get_currency_symbol() {
+        if (defined('CURRENCY_SYMBOL_OVERRIDE')) {
+            return CURRENCY_SYMBOL_OVERRIDE;
+        }
+        if (defined('INVOICE_CURRENCY')) {
+            return INVOICE_CURRENCY;
+        }
+        if (defined('CURRENCY_SYMBOL') && CURRENCY_SYMBOL === '$') {
+            return CURRENCY_SYMBOL;
+        }
+        return '$'; // Fallback
+    }
+}
+
 // Initialize database connection
 $pdo = getDBConnection();
 
@@ -91,6 +107,16 @@ try {
     $stmt->execute(['invoice_footer']);
     $invoice_footer = $stmt->fetchColumn();
     
+    // Fetch company logo setting
+    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+    $stmt->execute(['company_logo']);
+    $company_logo = $stmt->fetchColumn();
+    
+    // Use config constant as fallback
+    if (empty($company_logo) && defined('COMPANY_LOGO')) {
+        $company_logo = COMPANY_LOGO;
+    }
+    
 } catch (PDOException $e) {
     die('Database error: ' . $e->getMessage());
 }
@@ -129,6 +155,19 @@ try {
             color: white;
             padding: 40px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-logo {
+            max-width: 200px;
+            max-height: 80px;
+            object-fit: contain;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
         }
         
         .header h1 {
@@ -154,13 +193,33 @@ try {
             border-bottom: 2px solid #e9ecef;
         }
         
-        .company-info h2 {
+        .company-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        
+        .company-logo-section {
+            flex-shrink: 0;
+        }
+        
+        .company-logo-img {
+            max-width: 150px;
+            max-height: 80px;
+            object-fit: contain;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 8px;
+            background: white;
+        }
+        
+        .company-details h2 {
             color: #34495e;
             font-size: 24px;
             margin-bottom: 15px;
         }
         
-        .company-info p {
+        .company-details p {
             color: #666;
             line-height: 1.6;
             margin-bottom: 5px;
@@ -513,6 +572,9 @@ try {
 <body>
     <div class="container">
         <div class="header">
+            <?php if (!empty($company_logo) && file_exists($company_logo)): ?>
+                <img src="<?php echo htmlspecialchars($company_logo); ?>" alt="<?php echo htmlspecialchars(COMPANY_NAME); ?> Logo" class="header-logo">
+            <?php endif; ?>
             <h1><?php echo COMPANY_NAME; ?></h1>
             <p>Professional Invoice</p>
         </div>
@@ -533,10 +595,17 @@ try {
             
             <div class="invoice-header">
                 <div class="company-info">
-                    <h2><?php echo COMPANY_NAME; ?></h2>
-                    <p><?php echo nl2br(COMPANY_ADDRESS); ?></p>
-                    <p>Email: <?php echo COMPANY_EMAIL; ?></p>
-                    <p>Phone: <?php echo COMPANY_PHONE; ?></p>
+                    <?php if (!empty($company_logo) && file_exists($company_logo)): ?>
+                        <div class="company-logo-section">
+                            <img src="<?php echo htmlspecialchars($company_logo); ?>" alt="Company Logo" class="company-logo-img">
+                        </div>
+                    <?php endif; ?>
+                    <div class="company-details">
+                        <h2><?php echo COMPANY_NAME; ?></h2>
+                        <p><?php echo nl2br(COMPANY_ADDRESS); ?></p>
+                        <p>Email: <?php echo COMPANY_EMAIL; ?></p>
+                        <p>Phone: <?php echo COMPANY_PHONE; ?></p>
+                    </div>
                 </div>
                 
                 <div class="invoice-details">
@@ -589,8 +658,8 @@ try {
                         <tr>
                             <td><?php echo htmlspecialchars($item['description']); ?></td>
                             <td class="text-center"><?php echo number_format($item['quantity'], 2); ?></td>
-                            <td class="text-right"><?php echo CURRENCY_SYMBOL . number_format($item['unit_price'], 2); ?></td>
-                            <td class="text-right"><?php echo CURRENCY_SYMBOL . number_format($item['line_total'], 2); ?></td>
+                            <td class="text-right"><?php echo get_currency_symbol() . number_format($item['unit_price'], 2); ?></td>
+                            <td class="text-right"><?php echo get_currency_symbol() . number_format($item['line_total'], 2); ?></td>
                         </tr>
                         <?php if (!empty($item['repair_details'])): ?>
                             <tr class="repair-details-row">
@@ -613,7 +682,7 @@ try {
                         <div class="payment-item">
                             <strong><?php echo date('M d, Y', strtotime($payment['payment_date'])); ?></strong> - 
                             <?php echo ucfirst(str_replace('_', ' ', $payment['payment_method'])); ?>: 
-                            <strong><?php echo CURRENCY_SYMBOL . number_format($payment['amount'], 2); ?></strong>
+                            <strong><?php echo get_currency_symbol() . number_format($payment['amount'], 2); ?></strong>
                             <?php if (!empty($payment['transaction_id'])): ?>
                                 (Ref: <?php echo htmlspecialchars($payment['transaction_id']); ?>)
                             <?php endif; ?>
@@ -625,7 +694,7 @@ try {
             <div class="totals-section">
                 <div class="total-row">
                     <span class="total-label">Subtotal:</span>
-                    <span class="total-value"><?php echo CURRENCY_SYMBOL . number_format($invoice['subtotal'], 2); ?></span>
+                    <span class="total-value"><?php echo get_currency_symbol() . number_format($invoice['subtotal'], 2); ?></span>
                 </div>
                 
                 <?php if ($invoice['discount_amount'] > 0): ?>
@@ -636,31 +705,31 @@ try {
                                 (<?php echo $invoice['discount_value']; ?>%)
                             <?php endif; ?>:
                         </span>
-                        <span class="total-value">-<?php echo CURRENCY_SYMBOL . number_format($invoice['discount_amount'], 2); ?></span>
+                        <span class="total-value">-<?php echo get_currency_symbol() . number_format($invoice['discount_amount'], 2); ?></span>
                     </div>
                 <?php endif; ?>
                 
                 <div class="total-row">
                     <span class="total-label">Tax (<?php echo number_format($invoice['tax_rate'] * 100, 2); ?>%):</span>
-                    <span class="total-value"><?php echo CURRENCY_SYMBOL . number_format($invoice['tax_amount'], 2); ?></span>
+                    <span class="total-value"><?php echo get_currency_symbol() . number_format($invoice['tax_amount'], 2); ?></span>
                 </div>
                 
                 <div class="total-row grand-total">
                     <span class="total-label">Total:</span>
-                    <span class="total-value"><?php echo CURRENCY_SYMBOL . number_format($invoice['total'], 2); ?></span>
+                    <span class="total-value"><?php echo get_currency_symbol() . number_format($invoice['total'], 2); ?></span>
                 </div>
                 
                 <?php if ($paid_amount > 0): ?>
                     <div class="total-row" style="margin-top: 10px;">
                         <span class="total-label">Amount Paid:</span>
-                        <span class="total-value"><?php echo CURRENCY_SYMBOL . number_format($paid_amount, 2); ?></span>
+                        <span class="total-value"><?php echo get_currency_symbol() . number_format($paid_amount, 2); ?></span>
                     </div>
                 <?php endif; ?>
                 
                 <?php if ($balance_due > 0): ?>
                     <div class="total-row balance-due">
                         <span class="total-label">Balance Due:</span>
-                        <span class="total-value"><?php echo CURRENCY_SYMBOL . number_format($balance_due, 2); ?></span>
+                        <span class="total-value"><?php echo get_currency_symbol() . number_format($balance_due, 2); ?></span>
                     </div>
                 <?php endif; ?>
             </div>

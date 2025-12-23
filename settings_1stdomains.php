@@ -1,6 +1,17 @@
 <?php
+/**
+ * Settings Page - Optimized for 1stdomains Hosting
+ * Pre-configured with 1stdomains SMTP settings
+ */
+
 require_once 'db.php';
-require_once 'config.php';
+
+// Try to load the appropriate config file
+if (file_exists('config.php')) {
+    require_once 'config.php';
+} elseif (file_exists('config_hosting.php')) {
+    require_once 'config_hosting.php';
+}
 
 // Initialize database connection
 $pdo = getDBConnection();
@@ -79,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             $config_content .= "if (!defined('DB_HOST')) define('DB_HOST', '" . DB_HOST . "');\n";
             $config_content .= "if (!defined('DB_NAME')) define('DB_NAME', '" . DB_NAME . "');\n";
             $config_content .= "if (!defined('DB_USER')) define('DB_USER', '" . DB_USER . "');\n";
-            $config_content .= "if (!defined('DB_PASS')) define('DB_PASS', '" . DB_PASS . "');\n\n";
+            $config_content .= "if (!defined('DB_PASS')) define('DB_PASS', '" . addslashes(DB_PASS) . "');\n\n";
             
             $config_content .= "// Company Information\n";
             $config_content .= "if (!defined('COMPANY_NAME')) define('COMPANY_NAME', '" . addslashes($settings['company_name']) . "');\n";
@@ -99,12 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             
             $config_content .= "// Email Settings (SMTP)\n";
             $config_content .= "if (!defined('SMTP_HOST')) define('SMTP_HOST', '" . addslashes($settings['smtp_host']) . "');\n";
-            // Set SMTP_AUTH based on whether credentials are provided
-            $smtp_auth = (!empty($settings['smtp_username']) && !empty($settings['smtp_password'])) ? 'true' : 'false';
             $config_content .= "if (!defined('SMTP_USER')) define('SMTP_USER', '" . addslashes($settings['smtp_username']) . "');\n";
             $config_content .= "if (!defined('SMTP_PASS')) define('SMTP_PASS', '" . addslashes($settings['smtp_password']) . "');\n";
-            $config_content .= "if (!defined('SMTP_AUTH')) define('SMTP_AUTH', " . $smtp_auth . ");\n";
-            $config_content .= "if (!defined('SMTP_SECURE')) define('SMTP_SECURE', '" . ($settings['smtp_secure'] == 'none' ? 'None' : $settings['smtp_secure']) . "');\n";
+            $config_content .= "if (!defined('SMTP_AUTH')) define('SMTP_AUTH', true);\n";
+            $config_content .= "if (!defined('SMTP_SECURE')) define('SMTP_SECURE', '" . $settings['smtp_secure'] . "');\n";
             $config_content .= "if (!defined('SMTP_PORT')) define('SMTP_PORT', " . $settings['smtp_port'] . ");\n";
             $config_content .= "if (!defined('SMTP_USERNAME')) define('SMTP_USERNAME', '" . addslashes($settings['smtp_username']) . "');\n";
             $config_content .= "if (!defined('SMTP_PASSWORD')) define('SMTP_PASSWORD', '" . addslashes($settings['smtp_password']) . "');\n";
@@ -114,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             
             file_put_contents('config.php', $config_content);
             
-            $message = 'Settings updated successfully! Please refresh the page to see changes.';
+            $message = 'Settings updated successfully! Configuration file has been updated.';
             $message_type = 'success';
         } catch (Exception $e) {
             $message = 'Error updating settings: ' . $e->getMessage();
@@ -134,23 +143,23 @@ try {
     $db_settings = [];
 }
 
-// Use constants as fallback
+// Use constants as fallback with 1stdomains defaults
 $current_settings = [
-    'company_name' => $db_settings['company_name'] ?? (defined('COMPANY_NAME') ? COMPANY_NAME : 'GeekMobile IT Services'),
-    'company_address' => $db_settings['company_address'] ?? (defined('COMPANY_ADDRESS') ? COMPANY_ADDRESS : '123 Tech Street, Silicon Valley, CA 94000'),
-    'company_email' => $db_settings['company_email'] ?? (defined('COMPANY_EMAIL') ? COMPANY_EMAIL : 'billing@geekmobile.com'),
-    'company_phone' => $db_settings['company_phone'] ?? (defined('COMPANY_PHONE') ? COMPANY_PHONE : '+1 (555) 123-4567'),
+    'company_name' => $db_settings['company_name'] ?? (defined('COMPANY_NAME') ? COMPANY_NAME : 'Trash 2 Go'),
+    'company_address' => $db_settings['company_address'] ?? (defined('COMPANY_ADDRESS') ? COMPANY_ADDRESS : 'Auckland'),
+    'company_email' => $db_settings['company_email'] ?? (defined('COMPANY_EMAIL') ? COMPANY_EMAIL : 'info@trash2go.nz'),
+    'company_phone' => $db_settings['company_phone'] ?? (defined('COMPANY_PHONE') ? COMPANY_PHONE : '027 776 5477'),
     'company_logo' => $db_settings['company_logo'] ?? (defined('COMPANY_LOGO') ? COMPANY_LOGO : ''),
-    'default_tax_rate' => $db_settings['default_tax_rate'] ?? (defined('DEFAULT_TAX_RATE') ? DEFAULT_TAX_RATE * 100 : 10),
-    'default_currency' => $db_settings['default_currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD'),
+    'default_tax_rate' => $db_settings['default_tax_rate'] ?? (defined('DEFAULT_TAX_RATE') ? DEFAULT_TAX_RATE : 15),
+    'default_currency' => $db_settings['default_currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'NZD'),
     'invoice_prefix' => $db_settings['invoice_prefix'] ?? 'INV-',
-    'smtp_host' => $db_settings['smtp_host'] ?? (defined('SMTP_HOST') ? SMTP_HOST : 'smtp.gmail.com'),
-    'smtp_port' => $db_settings['smtp_port'] ?? (defined('SMTP_PORT') ? SMTP_PORT : 587),
-    'smtp_username' => $db_settings['smtp_username'] ?? (defined('SMTP_USERNAME') ? SMTP_USERNAME : ''),
+    'smtp_host' => $db_settings['smtp_host'] ?? (defined('SMTP_HOST') ? SMTP_HOST : 'mail.1stdomains.co.nz'),
+    'smtp_port' => $db_settings['smtp_port'] ?? (defined('SMTP_PORT') ? SMTP_PORT : 465),
+    'smtp_username' => $db_settings['smtp_username'] ?? (defined('SMTP_USERNAME') ? SMTP_USERNAME : 'info@trash2go.nz'),
     'smtp_password' => $db_settings['smtp_password'] ?? (defined('SMTP_PASSWORD') ? SMTP_PASSWORD : ''),
-    'smtp_secure' => $db_settings['smtp_secure'] ?? (defined('SMTP_SECURE') ? SMTP_SECURE : 'tls'),
-    'from_email' => $db_settings['from_email'] ?? (defined('FROM_EMAIL') ? FROM_EMAIL : 'noreply@geekmobile.com'),
-    'from_name' => $db_settings['from_name'] ?? (defined('FROM_NAME') ? FROM_NAME : 'GeekMobile Invoices'),
+    'smtp_secure' => $db_settings['smtp_secure'] ?? (defined('SMTP_SECURE') ? SMTP_SECURE : 'ssl'),
+    'from_email' => $db_settings['from_email'] ?? (defined('FROM_EMAIL') ? FROM_EMAIL : 'info@trash2go.nz'),
+    'from_name' => $db_settings['from_name'] ?? (defined('FROM_NAME') ? FROM_NAME : 'Trash 2 Go Invoices'),
     'invoice_footer' => $db_settings['invoice_footer'] ?? ''
 ];
 ?>
@@ -160,7 +169,7 @@ $current_settings = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - <?php echo APP_NAME; ?></title>
+    <title>Settings - <?php echo defined('APP_NAME') ? APP_NAME : 'Invoice System'; ?></title>
     <style>
         * {
             margin: 0;
@@ -197,6 +206,17 @@ $current_settings = [
         .header p {
             color: #666;
             font-size: 14px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #10b981;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
         }
         
         .message {
@@ -384,6 +404,26 @@ $current_settings = [
             line-height: 1.5;
         }
         
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .warning-box h3 {
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .warning-box p {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
         @media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -395,8 +435,8 @@ $current_settings = [
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>⚙️ System Settings</h1>
-            <p>Customize your company information and system preferences</p>
+            <h1>⚙️ System Settings<span class="badge">1stdomains Optimized</span></h1>
+            <p>Pre-configured for 1stdomains hosting with automatic PHP mail() fallback</p>
         </div>
 
         <!-- Message -->
@@ -458,7 +498,7 @@ $current_settings = [
                     <div class="form-group">
                         <label>Company Address</label>
                         <input type="text" name="company_address" value="<?php echo htmlspecialchars($current_settings['company_address']); ?>">
-                        <small>Full address including city, state, and ZIP code</small>
+                        <small>Full address including city and postal code</small>
                     </div>
                 </div>
             </div>
@@ -468,17 +508,17 @@ $current_settings = [
                 <h2>Invoice Settings</h2>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Default Tax Rate (%)</label>
+                        <label>Default Tax Rate (GST %)</label>
                         <input type="number" step="0.01" name="default_tax_rate" value="<?php echo htmlspecialchars($current_settings['default_tax_rate']); ?>">
-                        <small>Default tax percentage applied to invoices</small>
+                        <small>Default GST percentage (NZ standard is 15%)</small>
                     </div>
                     <div class="form-group">
                         <label>Default Currency</label>
                         <select name="default_currency">
                             <option value="NZD" <?php echo $current_settings['default_currency'] == 'NZD' ? 'selected' : ''; ?>>NZD - NZ Dollar</option>
+                            <option value="USD" <?php echo $current_settings['default_currency'] == 'USD' ? 'selected' : ''; ?>>USD - US Dollar</option>
                             <option value="EUR" <?php echo $current_settings['default_currency'] == 'EUR' ? 'selected' : ''; ?>>EUR - Euro</option>
                             <option value="GBP" <?php echo $current_settings['default_currency'] == 'GBP' ? 'selected' : ''; ?>>GBP - British Pound</option>
-                            <option value="CAD" <?php echo $current_settings['default_currency'] == 'CAD' ? 'selected' : ''; ?>>CAD - Canadian Dollar</option>
                             <option value="AUD" <?php echo $current_settings['default_currency'] == 'AUD' ? 'selected' : ''; ?>>AUD - Australian Dollar</option>
                         </select>
                     </div>
@@ -487,53 +527,59 @@ $current_settings = [
                 <div class="form-group">
                     <label>Invoice Number Prefix</label>
                     <input type="text" name="invoice_prefix" value="<?php echo htmlspecialchars($current_settings['invoice_prefix']); ?>">
-                    <small>Prefix for invoice numbers (e.g., INV-, GM-, etc.)</small>
+                    <small>Prefix for invoice numbers (e.g., INV-, T2G-, etc.)</small>
                 </div>
 
                 <div class="form-group">
                     <label>Invoice Footer Text</label>
-                    <textarea name="invoice_footer" rows="4" placeholder="Enter footer text that will appear at the bottom of invoices (e.g., GST number, payment details, terms, etc.)"><?php echo htmlspecialchars($current_settings['invoice_footer']); ?></textarea>
+                    <textarea name="invoice_footer" rows="4" placeholder="Enter footer text (e.g., GST number, bank details, payment terms, etc.)"><?php echo htmlspecialchars($current_settings['invoice_footer']); ?></textarea>
                     <small>Footer information that appears at the bottom of all invoices and emails</small>
                 </div>
             </div>
 
             <!-- Email Settings -->
             <div class="card">
-                <h2>Email Settings (SMTP)</h2>
+                <h2>Email Settings (SMTP) - 1stdomains Configuration</h2>
+                
+                <div class="warning-box">
+                    <h3>⚠️ Important: Email Fallback Enabled</h3>
+                    <p>Your system is configured with automatic PHP mail() fallback. If SMTP connection fails (due to firewall), emails will automatically send using PHP's built-in mail() function. This ensures emails always get delivered.</p>
+                </div>
+                
                 <div class="info-box">
-                    <h3>📧 SMTP Configuration</h3>
-                    <p><strong>Common SMTP Servers:</strong></p>
-                    <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
-                        <li><strong>ISX Hosting (Recommended):</strong> emr.hosting.isx.net.nz, Port 25, No Auth, Security: None</li>
-                        <li><strong>1stdomains:</strong> mail.1stdomains.co.nz, Port 465, SSL</li>
-                        <li><strong>Gmail:</strong> smtp.gmail.com, Port 587 (TLS) or 465 (SSL)</li>
+                    <h3>📧 1stdomains SMTP Settings</h3>
+                    <p><strong>Pre-configured for 1stdomains hosting:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        <li>SMTP Host: mail.1stdomains.co.nz</li>
+                        <li>Port: 465 (SSL) - Recommended</li>
+                        <li>Alternative: Port 587 (TLS) or Port 25</li>
+                        <li>Username: Your email address (e.g., info@trash2go.nz)</li>
                     </ul>
-                    <p style="margin-top: 10px;"><strong>Note:</strong> If SMTP fails, the system will automatically fall back to PHP mail().</p>
                 </div>
                 
                 <div class="form-grid">
                     <div class="form-group">
                         <label>SMTP Host</label>
-                        <input type="text" name="smtp_host" value="<?php echo htmlspecialchars($current_settings['smtp_host']); ?>" placeholder="emr.hosting.isx.net.nz">
-                        <small>Examples: emr.hosting.isx.net.nz, mail.1stdomains.co.nz, smtp.gmail.com</small>
+                        <input type="text" name="smtp_host" value="<?php echo htmlspecialchars($current_settings['smtp_host']); ?>" placeholder="mail.1stdomains.co.nz">
+                        <small>1stdomains SMTP server</small>
                     </div>
                     <div class="form-group">
                         <label>SMTP Port</label>
-                        <input type="number" name="smtp_port" value="<?php echo htmlspecialchars($current_settings['smtp_port']); ?>" placeholder="25">
-                        <small>Common ports: 25 (no auth), 587 (TLS), 465 (SSL)</small>
+                        <input type="number" name="smtp_port" value="<?php echo htmlspecialchars($current_settings['smtp_port']); ?>" placeholder="465">
+                        <small>465 (SSL), 587 (TLS), or 25</small>
                     </div>
                 </div>
                 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>SMTP Username</label>
-                        <input type="text" name="smtp_username" value="<?php echo htmlspecialchars($current_settings['smtp_username']); ?>" placeholder="your-email@example.com">
-                        <small>Leave empty if no authentication required (e.g., emr.hosting.isx.net.nz)</small>
+                        <label>SMTP Username (Email Address)</label>
+                        <input type="text" name="smtp_username" value="<?php echo htmlspecialchars($current_settings['smtp_username']); ?>" placeholder="info@trash2go.nz">
+                        <small>Your full email address</small>
                     </div>
                     <div class="form-group">
                         <label>SMTP Password</label>
-                        <input type="password" name="smtp_password" value="<?php echo htmlspecialchars($current_settings['smtp_password']); ?>" placeholder="Your password">
-                        <small>Leave empty if no authentication required</small>
+                        <input type="password" name="smtp_password" value="<?php echo htmlspecialchars($current_settings['smtp_password']); ?>" placeholder="Your email password">
+                        <small>Your email account password</small>
                     </div>
                 </div>
                 
@@ -541,29 +587,32 @@ $current_settings = [
                     <div class="form-group">
                         <label>SMTP Security</label>
                         <select name="smtp_secure">
+                            <option value="ssl" <?php echo $current_settings['smtp_secure'] == 'ssl' ? 'selected' : ''; ?>>SSL (Port 465) - Recommended</option>
                             <option value="tls" <?php echo $current_settings['smtp_secure'] == 'tls' ? 'selected' : ''; ?>>TLS (Port 587)</option>
-                            <option value="ssl" <?php echo $current_settings['smtp_secure'] == 'ssl' ? 'selected' : ''; ?>>SSL (Port 465)</option>
-                            <option value="none" <?php echo $current_settings['smtp_secure'] == 'none' || $current_settings['smtp_secure'] == 'None' ? 'selected' : ''; ?>>None (Port 25) - No Encryption</option>
+                            <option value="" <?php echo $current_settings['smtp_secure'] == '' || $current_settings['smtp_secure'] == 'none' ? 'selected' : ''; ?>>None (Port 25) - No Encryption</option>
                         </select>
-                        <small>Use "None" for servers like emr.hosting.isx.net.nz</small>
+                        <small>Use "None" for port 25 without encryption</small>
                     </div>
                     <div class="form-group">
                         <label>From Email</label>
-                        <input type="email" name="from_email" value="<?php echo htmlspecialchars($current_settings['from_email']); ?>" placeholder="noreply@yourcompany.com">
+                        <input type="email" name="from_email" value="<?php echo htmlspecialchars($current_settings['from_email']); ?>" placeholder="info@trash2go.nz">
+                        <small>Email address shown in "From" field</small>
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label>From Name</label>
-                    <input type="text" name="from_name" value="<?php echo htmlspecialchars($current_settings['from_name']); ?>" placeholder="Your Company Name">
+                    <input type="text" name="from_name" value="<?php echo htmlspecialchars($current_settings['from_name']); ?>" placeholder="Trash 2 Go Invoices">
                     <small>Name that appears in the "From" field of emails</small>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button type="submit" name="update_settings" class="btn btn-primary">💾 Save Settings</button>
                 <a href="index.php" class="btn btn-secondary">← Back to Dashboard</a>
+                <a href="test_email.php" class="btn btn-secondary" style="background: #10b981;">📧 Test Email</a>
+                <a href="diagnose_email_issue.php" class="btn btn-secondary" style="background: #f59e0b;">🔍 Run Diagnostics</a>
             </div>
         </form>
     </div>

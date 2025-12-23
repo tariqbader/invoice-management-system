@@ -8,6 +8,22 @@ require_once 'config.php';
 require_once 'db.php';
 require_once 'lib/tcpdf/tcpdf.php';
 
+// Helper function to get the correct currency symbol
+if (!function_exists('get_currency_symbol')) {
+    function get_currency_symbol() {
+        if (defined('CURRENCY_SYMBOL_OVERRIDE')) {
+            return CURRENCY_SYMBOL_OVERRIDE;
+        }
+        if (defined('INVOICE_CURRENCY')) {
+            return INVOICE_CURRENCY;
+        }
+        if (defined('CURRENCY_SYMBOL') && CURRENCY_SYMBOL === '$') {
+            return CURRENCY_SYMBOL;
+        }
+        return '$'; // Fallback
+    }
+}
+
 // Initialize database connection
 $pdo = getDBConnection();
 
@@ -60,6 +76,16 @@ try {
     $stmt->execute(['invoice_footer']);
     $invoice_footer = $stmt->fetchColumn();
 
+    // Fetch company logo setting
+    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+    $stmt->execute(['company_logo']);
+    $company_logo = $stmt->fetchColumn();
+    
+    // Use config constant as fallback
+    if (empty($company_logo) && defined('COMPANY_LOGO')) {
+        $company_logo = COMPANY_LOGO;
+    }
+
     // Create new PDF document
     $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
@@ -87,14 +113,34 @@ try {
     // Set font
     $pdf->SetFont('helvetica', '', 10);
     
-    // Company Header
-    $pdf->SetFont('helvetica', 'B', 20);
-    $pdf->Cell(0, 10, COMPANY_NAME, 0, 1, 'L');
+    // Company Header with Logo
+    $header_start_y = $pdf->GetY();
     
-    $pdf->SetFont('helvetica', '', 10);
-    $pdf->MultiCell(0, 5, COMPANY_ADDRESS . "\n" . 
-                          "Email: " . COMPANY_EMAIL . "\n" . 
-                          "Phone: " . COMPANY_PHONE, 0, 'L');
+    // Check if logo exists and display it
+    if (!empty($company_logo) && file_exists($company_logo)) {
+        // Display logo on the left
+        $pdf->Image($company_logo, 15, $header_start_y, 40, 0, '', '', '', false, 300, '', false, false, 0);
+        
+        // Position company info to the right of logo
+        $pdf->SetXY(60, $header_start_y);
+        $pdf->SetFont('helvetica', 'B', 20);
+        $pdf->Cell(0, 10, COMPANY_NAME, 0, 1, 'L');
+        
+        $pdf->SetX(60);
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->MultiCell(0, 5, COMPANY_ADDRESS . "\n" . 
+                              "Email: " . COMPANY_EMAIL . "\n" . 
+                              "Phone: " . COMPANY_PHONE, 0, 'L');
+    } else {
+        // No logo, display company info normally
+        $pdf->SetFont('helvetica', 'B', 20);
+        $pdf->Cell(0, 10, COMPANY_NAME, 0, 1, 'L');
+        
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->MultiCell(0, 5, COMPANY_ADDRESS . "\n" . 
+                              "Email: " . COMPANY_EMAIL . "\n" . 
+                              "Phone: " . COMPANY_PHONE, 0, 'L');
+    }
     
     $pdf->Ln(5);
     

@@ -1,0 +1,63 @@
+<?php
+// CRITICAL FIX: Force correct CURRENCY_SYMBOL value
+// Some PHP extension is pre-defining CURRENCY_SYMBOL as 262145
+// We need to use runkit to redefine it, or use a workaround
+if (defined('CURRENCY_SYMBOL')) {
+    // Store the correct value in a different constant
+    if (!defined('INVOICE_CURRENCY')) define('INVOICE_CURRENCY', '$');
+    // Try to undefine if runkit is available
+    if (function_exists('runkit_constant_redefine')) {
+        runkit_constant_redefine('CURRENCY_SYMBOL', '$');
+    } else {
+        // Workaround: redefine using a wrapper constant
+        define('CURRENCY_SYMBOL_OVERRIDE', '$');
+    }
+} else {
+    define('CURRENCY_SYMBOL', '$');
+}
+
+// Database configuration
+if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
+if (!defined('DB_NAME')) define('DB_NAME', 'geekmobile_invoice');
+if (!defined('DB_USER')) define('DB_USER', 'badert');
+if (!defined('DB_PASS')) define('DB_PASS', 'T@r!q4269');
+
+// Company Information
+if (!defined('COMPANY_NAME')) define('COMPANY_NAME', 'Trash 2 Go');
+if (!defined('COMPANY_ADDRESS')) define('COMPANY_ADDRESS', 'Auckland');
+if (!defined('COMPANY_EMAIL')) define('COMPANY_EMAIL', 'info@trash2go.nz');
+if (!defined('COMPANY_PHONE')) define('COMPANY_PHONE', '027 776 5477');
+
+// Application Settings
+if (!defined('APP_NAME')) define('APP_NAME', 'GeekMobile Invoice System');
+if (!defined('DEFAULT_TAX_RATE')) define('DEFAULT_TAX_RATE', 15);
+if (!defined('DEFAULT_CURRENCY')) define('DEFAULT_CURRENCY', 'NZD');
+
+// Helper function to get the correct currency symbol
+if (!function_exists('get_currency_symbol')) {
+    function get_currency_symbol() {
+        if (defined('CURRENCY_SYMBOL_OVERRIDE')) {
+            return CURRENCY_SYMBOL_OVERRIDE;
+        }
+        if (defined('INVOICE_CURRENCY')) {
+            return INVOICE_CURRENCY;
+        }
+        if (defined('CURRENCY_SYMBOL') && CURRENCY_SYMBOL === '$') {
+            return CURRENCY_SYMBOL;
+        }
+        return '$'; // Fallback
+    }
+}
+
+// Email Settings (SMTP)
+if (!defined('SMTP_HOST')) define('SMTP_HOST', 'mail.1stdomains.co.nz');
+if (!defined('SMTP_USER')) define('SMTP_USER', 'info@trash2go.nz');
+if (!defined('SMTP_PASS')) define('SMTP_PASS', 'Nasser2018!');
+if (!defined('SMTP_AUTH')) define('SMTP_AUTH', true);
+if (!defined('SMTP_SECURE')) define('SMTP_SECURE', 'ssl');
+if (!defined('SMTP_PORT')) define('SMTP_PORT', 465);
+if (!defined('SMTP_USERNAME')) define('SMTP_USERNAME', 'info@trash2go.nz');
+if (!defined('SMTP_PASSWORD')) define('SMTP_PASSWORD', 'Nasser2018!');
+if (!defined('FROM_EMAIL')) define('FROM_EMAIL', 'info@trash2go.nz');
+if (!defined('FROM_NAME')) define('FROM_NAME', 'Trash 2 Go Invoices');
+?>

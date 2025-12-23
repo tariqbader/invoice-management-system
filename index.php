@@ -293,6 +293,14 @@ $total_clients = $stmt->fetchColumn();
                 <h3>Settings</h3>
                 <p>Customize company information and system preferences</p>
             </a>
+            
+            <?php if (hasRole('admin')): ?>
+            <a href="manage_users.php" class="nav-card">
+                <div class="icon">👥</div>
+                <h3>User Management</h3>
+                <p>Add, edit, and manage system users and admin rights</p>
+            </a>
+            <?php endif; ?>
         </div>
 
         <!-- Footer -->
