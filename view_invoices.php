@@ -44,8 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
     $invoice = $stmt->fetch();
 
     if ($invoice) {
+        // Get correct currency symbol
+        $currency = function_exists('get_currency_symbol') ? get_currency_symbol() : '$';
+        
         $subject = 'Invoice Reminder: ' . APP_NAME;
-        $body = "Dear {$invoice['name']},\n\nThis is a reminder for your outstanding invoice #{$invoice_id} due on {$invoice['due_date']}. Total: $" . number_format($invoice['total'], 2) . "\n\nPlease make payment at your earliest convenience.\n\nRegards,\n" . FROM_NAME;
+        $body = "Dear {$invoice['name']},\n\nThis is a reminder for your outstanding invoice #{$invoice_id} due on {$invoice['due_date']}. Total: " . $currency . number_format($invoice['total'], 2) . "\n\nPlease make payment at your earliest convenience.\n\nRegards,\n" . FROM_NAME;
         $headers = "From: " . FROM_EMAIL . "\r\n";
 
         if (mail($invoice['email'], $subject, $body, $headers)) {
