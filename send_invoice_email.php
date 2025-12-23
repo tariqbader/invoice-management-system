@@ -131,6 +131,9 @@ try {
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetFont('helvetica', '', 9);
     
+    // Get correct currency symbol
+    $currency = get_currency_symbol();
+    
     foreach ($items as $item) {
         $description = $item['description'];
         if ($item['is_milestone'] && $item['milestone_name']) {
@@ -138,15 +141,15 @@ try {
         }
         $pdf->MultiCell(80, 6, $description, 1, 'L', false, 0);
         $pdf->Cell(30, 6, number_format($item['quantity'], 2), 1, 0, 'C');
-        $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($item['unit_price'], 2), 1, 0, 'R');
-        $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($item['line_total'], 2), 1, 1, 'R');
+        $pdf->Cell(35, 6, $currency . number_format($item['unit_price'], 2), 1, 0, 'R');
+        $pdf->Cell(35, 6, $currency . number_format($item['line_total'], 2), 1, 1, 'R');
     }
     
     // Totals
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', '', 10);
     $pdf->Cell(145, 6, 'Subtotal:', 0, 0, 'R');
-    $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($invoice['subtotal'], 2), 0, 1, 'R');
+    $pdf->Cell(35, 6, $currency . number_format($invoice['subtotal'], 2), 0, 1, 'R');
     
     if ($invoice['discount_amount'] > 0) {
         $discount_label = 'Discount';
@@ -154,24 +157,24 @@ try {
             $discount_label .= ' (' . $invoice['discount_value'] . '%)';
         }
         $pdf->Cell(145, 6, $discount_label . ':', 0, 0, 'R');
-        $pdf->Cell(35, 6, '-' . CURRENCY_SYMBOL . number_format($invoice['discount_amount'], 2), 0, 1, 'R');
+        $pdf->Cell(35, 6, '-' . $currency . number_format($invoice['discount_amount'], 2), 0, 1, 'R');
     }
     
     $pdf->Cell(145, 6, 'Tax (' . $invoice['tax_rate'] . '%):', 0, 0, 'R');
-    $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($invoice['tax_amount'], 2), 0, 1, 'R');
+    $pdf->Cell(35, 6, $currency . number_format($invoice['tax_amount'], 2), 0, 1, 'R');
     
     $pdf->SetFont('helvetica', 'B', 12);
     $pdf->Cell(145, 8, 'Total:', 0, 0, 'R');
-    $pdf->Cell(35, 8, CURRENCY_SYMBOL . number_format($invoice['total'], 2), 0, 1, 'R');
+    $pdf->Cell(35, 8, $currency . number_format($invoice['total'], 2), 0, 1, 'R');
     
     if (!empty($payments)) {
         $pdf->Ln(3);
         $pdf->SetFont('helvetica', 'B', 10);
         $pdf->Cell(145, 6, 'Amount Paid:', 0, 0, 'R');
-        $pdf->Cell(35, 6, CURRENCY_SYMBOL . number_format($paid_amount, 2), 0, 1, 'R');
+        $pdf->Cell(35, 6, $currency . number_format($paid_amount, 2), 0, 1, 'R');
         $pdf->SetFont('helvetica', 'B', 11);
         $pdf->Cell(145, 7, 'Balance Due:', 0, 0, 'R');
-        $pdf->Cell(35, 7, CURRENCY_SYMBOL . number_format($balance_due, 2), 0, 1, 'R');
+        $pdf->Cell(35, 7, $currency . number_format($balance_due, 2), 0, 1, 'R');
     }
     
     if (!empty($invoice['notes'])) {
@@ -289,7 +292,7 @@ try {
                         </tr>
                         <tr>
                             <th>Total Amount</th>
-                            <td class="amount">' . CURRENCY_SYMBOL . number_format($invoice['total'], 2) . '</td>
+                            <td class="amount">' . $currency . number_format($invoice['total'], 2) . '</td>
                         </tr>
                     </table>
                 </div>
@@ -297,7 +300,7 @@ try {
                 <p>The complete invoice is attached as a PDF document. Please review it and process payment by the due date.</p>
                 
                 ' . ($balance_due = $invoice['total'] - array_sum(array_column($payments, 'amount'))) > 0 ? 
-                '<p><strong>Balance Due: ' . CURRENCY_SYMBOL . number_format($balance_due, 2) . '</strong></p>' : '' . '
+                '<p><strong>Balance Due: ' . $currency . number_format($balance_due, 2) . '</strong></p>' : '' . '
                 
                 <p>If you have any questions about this invoice, please don\'t hesitate to contact us.</p>
 
@@ -324,7 +327,7 @@ try {
                      "Invoice Number: {$invoice['invoice_number']}\n" .
                      "Invoice Date: " . date('F d, Y', strtotime($invoice['invoice_date'])) . "\n" .
                      "Due Date: " . date('F d, Y', strtotime($invoice['due_date'])) . "\n" .
-                     "Total Amount: " . CURRENCY_SYMBOL . number_format($invoice['total'], 2) . "\n\n" .
+                     "Total Amount: " . $currency . number_format($invoice['total'], 2) . "\n\n" .
                      "If you have any questions, please contact us at " . COMPANY_EMAIL . "\n\n" .
                      "Best regards,\n" . COMPANY_NAME;
     
