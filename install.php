@@ -58,88 +58,159 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
-            // Read and execute schema
-            $schema = file_get_contents('sql/schema.sql');
-            $statements = array_filter(
-                array_map('trim', explode(';', $schema)),
-                function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
-            );
+            // Check if complete schema exists, otherwise fall back to individual files
+            $schema_file = file_exists('sql/schema_complete.sql') ? 'sql/schema_complete.sql' : 'sql/schema.sql';
             
-            foreach ($statements as $statement) {
-                if (!empty(trim($statement))) {
-                    $pdo->exec($statement);
+            if ($schema_file === 'sql/schema_complete.sql') {
+                // Use the complete schema file (recommended)
+                $schema = file_get_contents($schema_file);
+                $statements = array_filter(
+                    array_map('trim', explode(';', $schema)),
+                    function($stmt) { 
+                        $stmt = trim($stmt);
+                        return !empty($stmt) && 
+                               strpos($stmt, '--') !== 0 && 
+                               stripos($stmt, 'CREATE OR REPLACE VIEW') === false &&
+                               stripos($stmt, 'SELECT ') !== 0;
+                    }
+                );
+                
+                foreach ($statements as $statement) {
+                    if (!empty(trim($statement))) {
+                        try {
+                            $pdo->exec($statement);
+                        } catch (PDOException $e) {
+                            // Ignore duplicate entry errors for default data
+                            if (strpos($e->getMessage(), 'Duplicate entry') === false && 
+                                strpos($e->getMessage(), 'Duplicate column') === false) {
+                                throw $e;
+                            }
+                        }
+                    }
                 }
-            }
-            
-            // Create services table
-            $services_schema = file_get_contents('sql/services_table.sql');
-            $statements = array_filter(
-                array_map('trim', explode(';', $services_schema)),
-                function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
-            );
-            
-            foreach ($statements as $statement) {
-                if (!empty(trim($statement))) {
-                    try {
+                
+                // Create the view separately (views need special handling)
+                try {
+                    $view_sql = "CREATE OR REPLACE VIEW invoice_summary AS
+                    SELECT 
+                        i.id,
+                        i.invoice_number,
+                        i.invoice_date,
+                        i.due_date,
+                        i.total,
+                        i.status,
+                        c.name AS client_name,
+                        c.email AS client_email,
+                        COALESCE(SUM(p.amount), 0) AS paid_amount,
+                        (i.total - COALESCE(SUM(p.amount), 0)) AS balance_due,
+                        CASE 
+                            WHEN i.status = 'paid' THEN 'Paid'
+                            WHEN i.due_date < CURDATE() AND i.status != 'paid' THEN 'Overdue'
+                            WHEN COALESCE(SUM(p.amount), 0) > 0 AND COALESCE(SUM(p.amount), 0) < i.total THEN 'Partially Paid'
+                            ELSE 'Unpaid'
+                        END AS payment_status
+                    FROM invoices i
+                    LEFT JOIN clients c ON i.client_id = c.id
+                    LEFT JOIN payments p ON i.id = p.invoice_id
+                    GROUP BY i.id, i.invoice_number, i.invoice_date, i.due_date, i.total, i.status, c.name, c.email";
+                    $pdo->exec($view_sql);
+                } catch (PDOException $e) {
+                    // View creation is optional, continue if it fails
+                }
+                
+                $success_messages[] = 'All database tables created successfully using complete schema!';
+            } else {
+                // Fall back to individual schema files (legacy method)
+                // Read and execute main schema
+                $schema = file_get_contents('sql/schema.sql');
+                $statements = array_filter(
+                    array_map('trim', explode(';', $schema)),
+                    function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
+                );
+                
+                foreach ($statements as $statement) {
+                    if (!empty(trim($statement))) {
                         $pdo->exec($statement);
-                    } catch (PDOException $e) {
-                        // Ignore duplicate entry errors for default data
-                        if (strpos($e->getMessage(), 'Duplicate entry') === false) {
-                            throw $e;
-                        }
                     }
                 }
-            }
-            
-            // Add repair_details column to invoice_items table
-            try {
-                $repair_details_schema = file_get_contents('sql/add_repair_details.sql');
-                $statements = array_filter(
-                    array_map('trim', explode(';', $repair_details_schema)),
-                    function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
-                );
                 
-                foreach ($statements as $statement) {
-                    if (!empty(trim($statement))) {
-                        try {
-                            $pdo->exec($statement);
-                        } catch (PDOException $e) {
-                            // Ignore if column already exists
-                            if (strpos($e->getMessage(), 'Duplicate column') === false) {
-                                throw $e;
+                // Create services table
+                if (file_exists('sql/services_table.sql')) {
+                    $services_schema = file_get_contents('sql/services_table.sql');
+                    $statements = array_filter(
+                        array_map('trim', explode(';', $services_schema)),
+                        function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
+                    );
+                    
+                    foreach ($statements as $statement) {
+                        if (!empty(trim($statement))) {
+                            try {
+                                $pdo->exec($statement);
+                            } catch (PDOException $e) {
+                                // Ignore duplicate entry errors for default data
+                                if (strpos($e->getMessage(), 'Duplicate entry') === false) {
+                                    throw $e;
+                                }
                             }
                         }
                     }
                 }
-            } catch (Exception $e) {
-                // If file doesn't exist or other error, continue (column might already exist)
-            }
-            
-            // Add invoice tracking columns for shareable links
-            try {
-                $tracking_schema = file_get_contents('sql/add_invoice_tracking.sql');
-                $statements = array_filter(
-                    array_map('trim', explode(';', $tracking_schema)),
-                    function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
-                );
                 
-                foreach ($statements as $statement) {
-                    if (!empty(trim($statement))) {
-                        try {
-                            $pdo->exec($statement);
-                        } catch (PDOException $e) {
-                            // Ignore if column already exists
-                            if (strpos($e->getMessage(), 'Duplicate column') === false) {
-                                throw $e;
+                // Add repair_details column to invoice_items table
+                if (file_exists('sql/add_repair_details.sql')) {
+                    try {
+                        $repair_details_schema = file_get_contents('sql/add_repair_details.sql');
+                        $statements = array_filter(
+                            array_map('trim', explode(';', $repair_details_schema)),
+                            function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
+                        );
+                        
+                        foreach ($statements as $statement) {
+                            if (!empty(trim($statement))) {
+                                try {
+                                    $pdo->exec($statement);
+                                } catch (PDOException $e) {
+                                    // Ignore if column already exists
+                                    if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                                        throw $e;
+                                    }
+                                }
                             }
                         }
+                    } catch (Exception $e) {
+                        // If file doesn't exist or other error, continue (column might already exist)
                     }
                 }
-            } catch (Exception $e) {
-                // If file doesn't exist or other error, continue (columns might already exist)
+                
+                // Add invoice tracking columns for shareable links
+                if (file_exists('sql/add_invoice_tracking.sql')) {
+                    try {
+                        $tracking_schema = file_get_contents('sql/add_invoice_tracking.sql');
+                        $statements = array_filter(
+                            array_map('trim', explode(';', $tracking_schema)),
+                            function($stmt) { return !empty($stmt) && strpos($stmt, '--') !== 0; }
+                        );
+                        
+                        foreach ($statements as $statement) {
+                            if (!empty(trim($statement))) {
+                                try {
+                                    $pdo->exec($statement);
+                                } catch (PDOException $e) {
+                                    // Ignore if column already exists
+                                    if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                                        throw $e;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception $e) {
+                        // If file doesn't exist or other error, continue (columns might already exist)
+                    }
+                }
+                
+                $success_messages[] = 'All database tables created successfully!';
             }
             
-            $success_messages[] = 'All database tables created successfully!';
             $current_step = 3;
         } catch (Exception $e) {
             $errors[] = 'Error creating tables: ' . $e->getMessage();
@@ -607,7 +678,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h2>Step 2: Create Database Tables</h2>
                     <div class="info-box">
                         <h3>🗄️ Database Structure</h3>
-                        <p>This will create all necessary tables for the invoice system including clients, invoices, payments, services, and settings.</p>
+                        <p>This will create all necessary tables for the invoice system including:</p>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Clients table</li>
+                            <li>Invoices table (with shareable link tracking)</li>
+                            <li>Invoice items table (with repair details)</li>
+                            <li>Payments table</li>
+                            <li>Services table (with default IT services)</li>
+                            <li>Users table (for authentication)</li>
+                            <li>Settings table</li>
+                            <li>Invoice summary view</li>
+                        </ul>
                     </div>
                     
                     <form method="post">
@@ -722,9 +803,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h3>✅ What's Been Set Up</h3>
                         <ul class="checklist">
                             <li>Database connection configured</li>
-                            <li>All tables created (clients, invoices, payments, services, settings, users)</li>
+                            <li>All tables created with complete schema</li>
+                            <li>Clients, invoices, invoice items, payments tables</li>
+                            <li>Services table with 10 default IT services</li>
+                            <li>Users table for authentication</li>
+                            <li>Settings table with company defaults</li>
+                            <li>Shareable link tracking columns</li>
+                            <li>Repair details column for invoice items</li>
+                            <li>Invoice summary view for reporting</li>
                             <li>Admin account created</li>
-                            <li>Default services added to catalog</li>
                             <li>Company information saved</li>
                             <li>Upload directories created</li>
                             <li>Configuration file generated</li>
