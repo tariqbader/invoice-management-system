@@ -304,7 +304,7 @@ This project is licensed under the MIT License.
 
 For issues and questions:
 
-- 📧 Email: support@geekmobile.com
+- 📧 Email: info@geekmobile.co.nz
 - 🐛 Issues: GitHub Issues
 - 📖 Documentation: QUICKSTART.md
 
