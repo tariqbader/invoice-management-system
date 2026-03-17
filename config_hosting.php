@@ -19,14 +19,14 @@ if (defined('CURRENCY_SYMBOL')) {
 // Database configuration
 if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
 if (!defined('DB_NAME')) define('DB_NAME', 'geekmobile_invoice');
-if (!defined('DB_USER')) define('DB_USER', 'badert');
-if (!defined('DB_PASS')) define('DB_PASS', 'T@r!q4269');
+if (!defined('DB_USER')) define('DB_USER', '');
+if (!defined('DB_PASS')) define('DB_PASS', '');
 
 // Company Information
-if (!defined('COMPANY_NAME')) define('COMPANY_NAME', 'Trash 2 Go');
+if (!defined('COMPANY_NAME')) define('COMPANY_NAME', 'Geekmobilenz');
 if (!defined('COMPANY_ADDRESS')) define('COMPANY_ADDRESS', 'Auckland');
-if (!defined('COMPANY_EMAIL')) define('COMPANY_EMAIL', 'info@trash2go.nz');
-if (!defined('COMPANY_PHONE')) define('COMPANY_PHONE', '027 776 5477');
+if (!defined('COMPANY_EMAIL')) define('COMPANY_EMAIL', 'info@yourcompany.nz');
+if (!defined('COMPANY_PHONE')) define('COMPANY_PHONE', '0211111');
 
 // Application Settings
 if (!defined('APP_NAME')) define('APP_NAME', 'GeekMobile Invoice System');
